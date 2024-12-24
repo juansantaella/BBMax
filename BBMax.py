@@ -63,7 +63,7 @@ def fetch_put_options(symbol):
 # --- Streamlit App ---
 st.title("YieldMax ETF Put Option Analyzer")
 
-st.write("**Note:** Select a specific symbol to analyze or leave the selection empty to analyze all symbols. If the 'Analyze All Symbols' checkbox is selected, the search and select fields will appear empty.")
+st.write("**Note:** Select a specific symbol to analyze or check the 'Analyze All Symbols' checkbox.")
 
 # --- User Inputs ---
 st.sidebar.header("User Input")
@@ -209,5 +209,11 @@ if st.sidebar.button("Search for Opportunities"):
                 st.text(details)
                 st.table(result)
                 st.write("*Highlight (✅): Indicates opportunities where the expiration date is at or beyond the calculated future dividend period based on user input.")
+
+st.write("---")  # Adds a horizontal line separator
+st.markdown(
+    "<div style='font-size: small; text-align: center;'>Version 2.0.0 | Last Updated: December 24, 2024</div>",
+    unsafe_allow_html=True
+)
 
 logger.info("Streamlit app started. Press Ctrl+C to stop.")
