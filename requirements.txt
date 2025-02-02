@@ -1,6 +1,6 @@
 streamlit
 yfinance
 pandas
-requests
-beautifulsoup4
-openpyxl
+numpy
+matplotlib
+pytz
