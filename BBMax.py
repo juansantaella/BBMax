@@ -30,7 +30,7 @@ def display_sidebar():
     # Replace lookback period slider with number of past dividends slider
     num_past_dividends = st.sidebar.slider("Number of Past Dividends", 1, 12, 6)
     budget_percentage = st.sidebar.slider("Budget Percentage (%)", 10, 60, 25)
-    multiplier = st.sidebar.slider("Multiplier (months)", 1, 12, 6)
+    multiplier = st.sidebar.slider("Multiplier", 1, 12, 6)
     strike_adjustment = st.sidebar.slider("Strike Adjustment Amount", 1, 10, 4)
 
     if select_all:
@@ -67,7 +67,7 @@ def fetch_dividend_data(symbol, num_past_dividends):
             return None, None, None, None
 
         # Debugging: Display dividend dates and amounts for the selected number of past dividends
-        # st.write("### Dividend Data for Selected Number of Past Dividends")
+        # t.write("### Dividend Data for Selected Number of Past Dividends")
         # st.write(last_n_dividends)
 
         total_dividends = last_n_dividends.sum()
@@ -82,7 +82,7 @@ def fetch_dividend_data(symbol, num_past_dividends):
 
 # Step 3: Fetch Put Option Data
 @st.cache_data
-def fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_dividend, last_dividend_date, budget_percentage):
+def fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_dividend, last_dividend_date, budget_percentage, dividend_frequency):
     try:
         stock = yf.Ticker(symbol)
         expiration_dates = stock.options
@@ -97,7 +97,9 @@ def fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_di
             for _, row in valid_puts.iterrows():
                 expiration_date = pd.Timestamp(expiration, tz=TZ)
                 total_days = (expiration_date - last_dividend_date).days
-                future_occurrences = total_days // 28
+
+                # Use the symbol-specific dividend frequency instead of a hardcoded value
+                future_occurrences = total_days // dividend_frequency
                 estimated_dividends = future_occurrences * avg_dividend
                 estimated_future_budget = estimated_dividends * (budget_percentage / 100)
 
@@ -205,7 +207,7 @@ def plot_health_recovery_graph(symbol, dividends, num_past_dividends):
 
         st.pyplot(fig)
         st.markdown("---")
-        st.markdown("**Version 3.4.0 | Last Updated February 2, 2025 | By: Sandeaux Bros**")
+        st.markdown("**Version 3.6.0 | Last Updated February 2, 2025 |  By: Sandeaux Bros**")
     except Exception as e:
         st.error(f"Error plotting health recovery graph: {str(e)}")
 
@@ -257,6 +259,9 @@ def main():
                     if total_dividends is None:
                         continue
 
+                    # Fetch the dividend frequency for the symbol from the CSV file
+                    dividend_frequency = row['Frequency']
+
                     premium_budget = avg_dividend * (budget_percentage / 100) * multiplier
                     historical = yf.Ticker(symbol).history(period="1d")
                     if not historical.empty:
@@ -266,7 +271,7 @@ def main():
                         st.warning(f"Close price data not available for {symbol}. Skipping...")
                         continue
 
-                    opportunities = fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_dividend, last_dividend_date, budget_percentage)
+                    opportunities = fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_dividend, last_dividend_date, budget_percentage, dividend_frequency)
                     if not opportunities.empty:
                         all_opportunities.append(opportunities)
 
@@ -287,6 +292,10 @@ def main():
                 if total_dividends is None:
                     return
 
+                # Fetch the dividend frequency for the symbol from the CSV file
+                symbols_data = load_symbols()
+                dividend_frequency = symbols_data[symbols_data['Symbol'] == symbol]['Frequency'].values[0]
+
                 premium_budget = avg_dividend * (budget_percentage / 100) * multiplier
                 historical = yf.Ticker(symbol).history(period="1d")
                 if not historical.empty:
@@ -296,7 +305,7 @@ def main():
                     st.error(f"Close price data not available for {symbol}.")
                     return
 
-                opportunities = fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_dividend, last_dividend_date, budget_percentage)
+                opportunities = fetch_put_option_data(symbol, premium_budget, strike_price_threshold, avg_dividend, last_dividend_date, budget_percentage, dividend_frequency)
 
                 # Display summary and results
                 if not opportunities.empty:
@@ -314,7 +323,7 @@ def main():
                         ]]
                     )
                     st.markdown("---")
-                    st.markdown("**Version 3.4.0 | Last Updated February 2, 2025 | By: Sandeaux Bros**")
+                    st.markdown("**Version 3.6.0 | Last Updated February 2, 2025 |  By: Sandeaux Bros**")
                 else:
                     st.error("No opportunities found for the selected symbol.")
 
